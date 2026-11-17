@@ -14,7 +14,7 @@ Source of **[ssaddist.biz.ua](https://ssaddist.biz.ua)**, the website for [Tally
 ## Run locally
 
 ```bash
-cd react-app
+cd sub-landing
 npm install
 npm run dev
 ```
