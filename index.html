@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tally — subscriptions, kept on your phone</title>
+<meta name="description" content="Tally lists every subscription you pay for and reminds you before each one renews. It runs entirely on your device.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Geologica:wght@500;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3efe6;      /* warm off-white */
+    --ink: #1d1c1a;        /* single text colour */
+    --muted: #5c5850;      /* ink at reduced strength, 6.4:1 on paper */
+    --line: #d4cec1;       /* hairlines */
+    --accent: #a5381a;     /* brick red, 5.9:1 on paper — used sparingly */
+    --screen: #fbf9f4;     /* app screen surface */
+
+    --display: "Bricolage Grotesque", Georgia, serif;
+    --text: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+
+    /* Five type sizes, no more */
+    --fs-xs: 0.875rem;                        /* 14px  meta, labels */
+    --fs-body: 1.0625rem;                     /* 17px  body */
+    --fs-lead: 1.375rem;                      /* 22px  lead, h3 */
+    --fs-h2: clamp(2rem, 5.5vw, 3.25rem);     /* 32–52px */
+    --fs-h1: clamp(2.625rem, 8.4vw, 5.75rem); /* 42–92px */
+
+    --gutter: 20px;
+    --max: 1160px;
+  }
+  /* Bricolage has no Cyrillic: Geologica carries the same grotesque character */
+  html[lang="ru"], html[lang="uk"] { --display: "Geologica", "Bricolage Grotesque", Georgia, serif; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--text);
+    font-size: var(--fs-body);
+    line-height: 1.65;
+  }
+  img, svg { display: block; max-width: 100%; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; overflow-wrap: break-word; hyphens: manual; }
+  h1 { font-size: var(--fs-h1); line-height: 0.98; letter-spacing: -0.035em; }
+  h2 { font-size: var(--fs-h2); line-height: 1.04; letter-spacing: -0.03em; }
+  h3 { font-size: var(--fs-lead); line-height: 1.25; letter-spacing: -0.015em; font-weight: 500; }
+  html[lang="ru"] h1, html[lang="uk"] h1 { letter-spacing: -0.045em; line-height: 1.02; }
+  p { margin: 0 0 1em; max-width: 34em; }
+  p:last-child { margin-bottom: 0; }
+
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+  a:hover { color: var(--accent); }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .skip {
+    position: absolute; left: -9999px; top: 0;
+    background: var(--ink); color: var(--paper); padding: 8px 12px;
+  }
+  .skip:focus { left: var(--gutter); top: 12px; }
+
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+
+  section { border-top: 1px solid var(--line); }
+
+  /* ---------- Header ---------- */
+  .top {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding-top: 22px; padding-bottom: 22px;
+  }
+  .wordmark {
+    font-family: "Bricolage Grotesque", Georgia, serif;
+    font-weight: 700; font-size: var(--fs-lead);
+    letter-spacing: -0.03em; text-decoration: none;
+  }
+  .top-right { display: flex; align-items: baseline; gap: 20px; font-size: var(--fs-xs); }
+  .top nav { display: flex; gap: 20px; }
+  .nav-how { display: none; }
+
+  .lang { display: flex; align-items: baseline; }
+  .lang button {
+    font: inherit; font-weight: 500; letter-spacing: 0.04em;
+    background: none; border: 0; padding: 4px 6px; margin: 0;
+    color: var(--muted); cursor: pointer;
+    border-radius: 2px;
+  }
+  .lang button + button { border-left: 1px solid var(--line); border-radius: 0; }
+  .lang button:hover { color: var(--accent); }
+  .lang button[aria-pressed="true"] {
+    color: var(--ink);
+    text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.3em;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero { border-top: 0; padding: 48px 0 64px; }
+  .hero h1 { max-width: 13ch; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero-foot { margin-top: 40px; display: grid; gap: 28px; }
+  .hero .lead { font-size: var(--fs-lead); line-height: 1.45; max-width: 26em; }
+  .privacy { border-left: 2px solid var(--accent); padding-left: 16px; max-width: 30em; }
+
+  /* ---------- Buttons ---------- */
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; }
+  .btn {
+    display: inline-block;
+    background: var(--ink); color: var(--paper);
+    padding: 14px 22px;
+    border-radius: 3px;
+    font-weight: 500; text-decoration: none;
+    border: 1px solid var(--ink);
+  }
+  .btn:hover { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .btn:focus-visible { outline-color: var(--ink); }
+  .meta { font-size: var(--fs-xs); color: var(--muted); }
+
+  /* ---------- How it works ---------- */
+  .how { padding: 64px 0; }
+  .how-grid { display: grid; gap: 32px; }
+  .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step;
+    display: grid; grid-template-columns: 3rem 1fr; gap: 0 12px;
+    padding: 22px 0;
+    border-top: 1px solid var(--line);
+  }
+  .steps li:last-child { border-bottom: 1px solid var(--line); }
+  .steps li::before {
+    content: counter(step, decimal-leading-zero);
+    font-size: var(--fs-xs); color: var(--accent); font-weight: 500;
+    padding-top: 0.35em;
+    font-variant-numeric: tabular-nums;
+  }
+  .steps h3 { margin-bottom: 6px; }
+  .steps p { color: var(--muted); }
+
+  /* ---------- Screens ---------- */
+  .screens { padding: 64px 0 72px; }
+  .screens-head { margin-bottom: 40px; display: grid; gap: 16px; }
+  .screens-grid { display: grid; gap: 48px; }
+  figure { margin: 0; }
+  figcaption { margin-top: 14px; font-size: var(--fs-xs); color: var(--muted); max-width: 30em; }
+
+  .phone {
+    background: var(--screen);
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    max-width: 360px;
+    font-size: var(--fs-xs);
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+  }
+  .phone-bar { display: flex; justify-content: space-between; padding: 10px 16px 0; color: var(--muted); }
+  .phone-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
+  .phone-head .t {
+    font-family: var(--display); font-weight: 700;
+    font-size: var(--fs-lead); letter-spacing: -0.02em; line-height: 1.2;
+  }
+  .phone-head .s { color: var(--muted); }
+  .phone-tabs { display: flex; gap: 18px; padding: 10px 16px 0; color: var(--muted); }
+  .phone-tabs span { padding-bottom: 8px; }
+  .phone-tabs .on { color: var(--ink); border-bottom: 2px solid var(--ink); }
+
+  .rows { list-style: none; margin: 0; padding: 0; }
+  .rows li {
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 12px;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .rows .name { font-weight: 500; color: var(--ink); }
+  .rows .sub { color: var(--muted); }
+  .rows .amt { text-align: right; font-weight: 500; white-space: nowrap; }
+  .rows .when { text-align: right; color: var(--muted); white-space: nowrap; }
+  .rows .soon { color: var(--accent); }
+  .phone-foot { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 16px 16px; }
+  .phone-foot b { font-size: var(--fs-body); font-weight: 500; }
+
+  .day {
+    padding: 8px 16px; color: var(--muted);
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    font-weight: 500;
+  }
+  .note-row { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .note-row .mark { color: var(--accent); font-weight: 500; }
+
+  /* ---------- What you get ---------- */
+  .get { padding: 64px 0; }
+  .get-grid { display: grid; gap: 36px; }
+  .get-intro { margin-top: 24px; }
+  .figure-big {
+    font-family: var(--display); font-weight: 700;
+    font-size: var(--fs-h2); line-height: 1; letter-spacing: -0.04em; white-space: nowrap;
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .figure-big small { font-size: var(--fs-lead); letter-spacing: -0.01em; font-weight: 500; }
+  dl { margin: 0; }
+  .get dl div { padding: 20px 0; border-top: 1px solid var(--line); }
+  .get dl div:last-child { border-bottom: 1px solid var(--line); }
+  dt { font-weight: 500; margin-bottom: 4px; }
+  dd { margin: 0; color: var(--muted); max-width: 34em; }
+
+  /* ---------- CTA ---------- */
+  .cta { padding: 72px 0 80px; }
+  .cta h2 { max-width: 14ch; margin-bottom: 24px; }
+  .cta p { margin-bottom: 32px; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 24px 0 40px;
+    font-size: var(--fs-xs); color: var(--muted);
+  }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
+
+  /* ---------- Motion: one quiet fade ---------- */
+  .js .reveal { opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+  .js .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ---------- Larger screens ---------- */
+  @media (min-width: 560px) {
+    .nav-how { display: inline; }
+  }
+  @media (min-width: 720px) {
+    :root { --gutter: 40px; }
+    .top-right { gap: 32px; }
+    .hero { padding: 72px 0 96px; }
+    .hero-foot { grid-template-columns: 7fr 5fr; align-items: end; gap: 40px; margin-top: 56px; }
+    .how, .get { padding: 96px 0; }
+    .screens { padding: 96px 0 112px; }
+    .screens-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+    .screens-grid figure:nth-child(2) { margin-top: 88px; }
+  }
+  @media (min-width: 1000px) {
+    .how-grid { grid-template-columns: 4fr 7fr; gap: 64px; }
+    .how-grid h2 { position: sticky; top: 32px; align-self: start; }
+    .screens-head { grid-template-columns: 5fr 6fr; align-items: end; gap: 64px; }
+    .screens-grid { grid-template-columns: 5fr 4fr 2fr; }
+    .get-grid { grid-template-columns: 5fr 1fr 6fr; }
+    .get-grid > :last-child { grid-column: 3; }
+    .cta .wrap { display: grid; grid-template-columns: 2fr 10fr; }
+    .cta .wrap > * { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+<header class="wrap top">
+  <a class="wordmark" href="#">Tally</a>
+  <div class="top-right">
+    <nav aria-label="Primary" data-i18n-aria="nav.label">
+      <a class="nav-how" href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#get-it" data-i18n="nav.download">Download</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language" data-i18n-aria="lang.label">
+      <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="true">EN</button>
+      <button type="button" data-lang="uk" lang="uk" aria-label="Українська" aria-pressed="false">UA</button>
+      <button type="button" data-lang="ru" lang="ru" aria-label="Русский" aria-pressed="false">RU</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <h1 id="hero-title" data-i18n="hero.title">Subscriptions renew quietly. Tally tells you <em>three days before</em> they do.</h1>
+      <div class="hero-foot">
+        <p class="lead" data-i18n="hero.lead">A plain list of everything you pay for monthly or yearly, with the next charge date next to each one. For anyone who has found a €9.99 line on a bank statement and couldn't remember signing up.</p>
+        <p class="privacy" data-i18n="hero.privacy">Tally keeps your list on your phone only: there is no account, no server, and no email or Telegram message sent on your behalf — reminders are ordinary notifications from the app itself.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how" aria-labelledby="how-title">
+    <div class="wrap how-grid">
+      <h2 id="how-title" class="reveal" data-i18n="how.title">How it works</h2>
+      <ol class="steps">
+        <li class="reveal">
+          <div>
+            <h3 data-i18n="how.s1.t">Add what you pay for</h3>
+            <p data-i18n="how.s1.p">Type the name, the price and the day it renews. Most people have between six and fifteen. It takes about five minutes to enter them all.</p>
+          </div>
+        </li>
+        <li class="reveal">
+          <div>
+            <h3 data-i18n="how.s2.t">Tally works out the dates</h3>
+            <p data-i18n="how.s2.p">Monthly, yearly, every four weeks, free trial ending on the 14th — Tally calculates every upcoming charge and keeps a running monthly total in your currency.</p>
+          </div>
+        </li>
+        <li class="reveal">
+          <div>
+            <h3 data-i18n="how.s3.t">You get a notice before each charge</h3>
+            <p data-i18n="how.s3.p">Three days ahead by default, or whatever you choose. That is enough time to cancel something you no longer use.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="screens" aria-labelledby="screens-title">
+    <div class="wrap">
+      <div class="screens-head">
+        <h2 id="screens-title" class="reveal" data-i18n="screens.title">Two screens, mostly</h2>
+        <p class="reveal" data-i18n="screens.p">The list shows what you pay and when. The upcoming view shows the next thirty days in order, so the month ahead is never a surprise.</p>
+      </div>
+
+      <div class="screens-grid">
+        <figure class="reveal">
+          <div class="phone" role="img" data-i18n-aria="m.aria1" aria-label="Tally subscriptions list: seven subscriptions totalling €69.96 per month, sorted by next renewal date.">
+            <div class="phone-bar" aria-hidden="true"><span>9:41</span><span>78%</span></div>
+            <div class="phone-head" aria-hidden="true">
+              <div class="t" data-i18n="m.subs">Subscriptions</div>
+              <div class="s" data-i18n="m.subsMeta">7 active · sorted by next charge</div>
+            </div>
+            <ul class="rows" aria-hidden="true">
+              <li><span class="name">Spotify Family</span><span class="amt" data-price="17.99">€17.99</span><span class="sub" data-i18n="m.monthly">Monthly</span><span class="when soon" data-i18n="m.in2">in 2 days</span></li>
+              <li><span class="name">iCloud+ 200 GB</span><span class="amt" data-price="2.99">€2.99</span><span class="sub" data-i18n="m.monthly">Monthly</span><span class="when soon" data-i18n="m.in3">in 3 days</span></li>
+              <li><span class="name">Netflix Standard</span><span class="amt" data-price="13.99">€13.99</span><span class="sub" data-i18n="m.monthly">Monthly</span><span class="when" data-date="2026-11-21">21 Nov</span></li>
+              <li><span class="name">The Guardian</span><span class="amt" data-price="6">€6.00</span><span class="sub" data-i18n="m.monthly">Monthly</span><span class="when" data-date="2026-11-24">24 Nov</span></li>
+              <li><span class="name">Urban Sports Club</span><span class="amt" data-price="19">€19.00</span><span class="sub" data-i18n="m.monthly">Monthly</span><span class="when" data-date="2026-12-01">1 Dec</span></li>
+              <li><span class="name">Duolingo</span><span class="amt" data-price="83.99">€83.99</span><span class="sub"><span data-i18n="m.yearly">Yearly</span> · <span data-price="7">€7.00</span><span data-i18n="m.permo">/mo</span></span><span class="when" data-date="2027-01-09">9 Jan</span></li>
+              <li><span class="name">1Password</span><span class="amt" data-price="35.88">€35.88</span><span class="sub"><span data-i18n="m.yearly">Yearly</span> · <span data-price="2.99">€2.99</span><span data-i18n="m.permo">/mo</span></span><span class="when" data-date="2027-03-02">2 Mar</span></li>
+            </ul>
+            <div class="phone-foot" aria-hidden="true"><span class="sub" data-i18n="m.perMonth">Per month</span><b data-price="69.96">€69.96</b></div>
+          </div>
+          <figcaption data-i18n="m.cap1">The list. Yearly plans are shown with their monthly share, so the total is honest.</figcaption>
+        </figure>
+
+        <figure class="reveal">
+          <div class="phone" role="img" data-i18n-aria="m.aria2" aria-label="Tally upcoming charges: €40.97 due in the next 14 days, grouped by date, with one free trial ending.">
+            <div class="phone-bar" aria-hidden="true"><span>9:41</span><span>78%</span></div>
+            <div class="phone-head" aria-hidden="true">
+              <div class="t" data-i18n="m.upcoming">Upcoming</div>
+              <div class="s"><span data-i18n="m.next14">Next 14 days</span> · <span data-price="40.97">€40.97</span></div>
+            </div>
+            <div class="phone-tabs" aria-hidden="true"><span data-i18n="m.d7">7 days</span><span class="on" data-i18n="m.d14">14 days</span><span data-i18n="m.d30">30 days</span></div>
+            <div aria-hidden="true">
+              <div class="day" data-day="2026-11-18">Wed 18 Nov</div>
+              <ul class="rows">
+                <li><span class="name">Spotify Family</span><span class="amt" data-price="17.99">€17.99</span><span class="sub">Visa ··4021</span><span class="when soon" data-i18n="m.reminded">reminded</span></li>
+              </ul>
+              <div class="day" data-day="2026-11-19">Thu 19 Nov</div>
+              <ul class="rows">
+                <li><span class="name">iCloud+ 200 GB</span><span class="amt" data-price="2.99">€2.99</span><span class="sub">Apple ID</span><span class="when"><span data-i18n="m.remind">remind</span> <span data-weekday="2026-11-16">Mon</span></span></li>
+              </ul>
+              <div class="day" data-day="2026-11-21">Sat 21 Nov</div>
+              <div class="note-row"><span class="mark" data-i18n="m.trial">Trial ends</span> — Headspace<span data-i18n="m.then">, then</span> <span data-price="12.99">€12.99</span><span data-i18n="m.permo">/mo</span></div>
+              <ul class="rows">
+                <li><span class="name">Netflix Standard</span><span class="amt" data-price="13.99">€13.99</span><span class="sub">Mastercard ··8817</span><span class="when"><span data-i18n="m.remind">remind</span> <span data-weekday="2026-11-18">Wed</span></span></li>
+              </ul>
+              <div class="day" data-day="2026-11-24">Tue 24 Nov</div>
+              <ul class="rows">
+                <li><span class="name">The Guardian</span><span class="amt" data-price="6">€6.00</span><span class="sub">Visa ··4021</span><span class="when"><span data-i18n="m.remind">remind</span> <span data-weekday="2026-11-21">Sat</span></span></li>
+              </ul>
+            </div>
+          </div>
+          <figcaption data-i18n="m.cap2">Upcoming. Free trials appear on the day they turn into a charge.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" aria-labelledby="get-title">
+    <div class="wrap get-grid">
+      <div class="reveal">
+        <h2 id="get-title" data-i18n="get.title">What you get</h2>
+        <p class="get-intro" data-i18n="get.p">People who add everything usually find one or two subscriptions they had forgotten about. For a typical list, that is somewhere around</p>
+        <p class="figure-big" data-i18n="get.fig" data-i18n-aria="get.figAria" aria-label="€150 to €300 a year">€150–300<small> /year</small></p>
+      </div>
+      <dl class="reveal">
+        <div>
+          <dt data-i18n="get.d1t">A reminder before every charge</dt>
+          <dd data-i18n="get.d1d">Local notifications, timed by you. They work in airplane mode.</dd>
+        </div>
+        <div>
+          <dt data-i18n="get.d2t">One honest monthly total</dt>
+          <dd data-i18n="get.d2d">Yearly and weekly plans are converted to a monthly figure. Different currencies are kept separate unless you set a rate.</dd>
+        </div>
+        <div>
+          <dt data-i18n="get.d3t">Trials that don't slip through</dt>
+          <dd data-i18n="get.d3d">Mark a subscription as a trial and Tally tells you the day before it starts charging.</dd>
+        </div>
+        <div>
+          <dt data-i18n="get.d4t">Your data, in a file you own</dt>
+          <dd data-i18n="get.d4d">Export to CSV at any time. Back up through your phone's own backup, or not at all.</dd>
+        </div>
+        <div>
+          <dt data-i18n="get.d5t">No bank connection</dt>
+          <dd data-i18n="get.d5d">Tally never asks for your bank login. You enter subscriptions yourself, which is also why nothing needs to leave the device.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="cta" id="get-it" aria-labelledby="cta-title">
+    <div class="wrap">
+      <h2 id="cta-title" class="reveal" data-i18n="cta.title">Write the list once. Stop being surprised.</h2>
+      <p class="reveal" data-i18n="cta.p">Free for up to ten subscriptions. €4.99 once, not monthly, to remove the limit.</p>
+      <div class="actions reveal">
+        <a class="btn" href="#" data-i18n="cta.ios">Download for iPhone</a>
+        <a href="#" data-i18n="cta.android">Get it for Android</a>
+        <span class="meta" data-i18n="cta.meta">iOS 16 or later · Android 10 or later</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span data-i18n="foot.made">Tally — made by two people in Lisbon.</span>
+    <span><a href="#" data-i18n="foot.policy">Privacy policy</a> <span data-i18n="foot.short">(it is short)</span></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  /* English lives in the HTML itself; it is read from the page on load. */
+  var STRINGS = {
+    ru: {
+      'meta.title': 'Tally — подписки, которые хранятся на вашем телефоне',
+      'meta.desc': 'Tally показывает все ваши подписки и напоминает о каждом списании заранее. Работает только на вашем устройстве.',
+      'skip': 'Перейти к содержанию',
+      'nav.label': 'Основное меню',
+      'nav.how': 'Как это работает',
+      'nav.download': 'Скачать',
+      'lang.label': 'Язык',
+      'hero.title': 'Подписки продлеваются незаметно. Tally предупредит <em>за три дня</em> до списания.',
+      'hero.lead': 'Простой список всего, за что вы платите каждый месяц или год, с датой следующего списания у каждой строки. Для всех, кто хоть раз находил в выписке 9,99 € и не мог вспомнить, на что подписался.',
+      'hero.privacy': 'Tally хранит ваш список только на телефоне: нет аккаунта, нет сервера, никаких писем и сообщений в Telegram от вашего имени — напоминания приходят обычными уведомлениями самого приложения.',
+      'how.title': 'Как это работает',
+      'how.s1.t': 'Добавьте, за что платите',
+      'how.s1.p': 'Введите название, цену и день продления. У большинства людей подписок от шести до пятнадцати. Чтобы внести все, нужно минут пять.',
+      'how.s2.t': 'Tally считает даты',
+      'how.s2.p': 'Раз в месяц, раз в год, каждые четыре недели, пробный период до 14-го — Tally рассчитывает каждое будущее списание и ведёт итог за месяц в вашей валюте.',
+      'how.s3.t': 'Уведомление перед каждым списанием',
+      'how.s3.p': 'По умолчанию за три дня или тогда, когда скажете. Этого хватает, чтобы отменить то, чем вы больше не пользуетесь.',
+      'screens.title': 'В основном два экрана',
+      'screens.p': 'Список показывает, что и когда вы платите. Экран «Скоро» — ближайшие тридцать дней по порядку, так что следующий месяц не застанет врасплох.',
+      'm.aria1': 'Список подписок в Tally: семь подписок на 69,96 € в месяц, по дате следующего списания.',
+      'm.aria2': 'Ближайшие списания в Tally: 40,97 € за 14 дней, по датам, плюс один заканчивающийся пробный период.',
+      'm.subs': 'Подписки',
+      'm.subsMeta': '7 активных · по дате списания',
+      'm.monthly': 'Ежемесячно',
+      'm.yearly': 'Ежегодно',
+      'm.permo': '/мес',
+      'm.in2': 'через 2 дня',
+      'm.in3': 'через 3 дня',
+      'm.perMonth': 'В месяц',
+      'm.cap1': 'Список. Годовые тарифы показаны месячной долей, поэтому итог честный.',
+      'm.upcoming': 'Скоро',
+      'm.next14': 'Ближайшие 14 дней',
+      'm.d7': '7 дней', 'm.d14': '14 дней', 'm.d30': '30 дней',
+      'm.reminded': 'напомнили',
+      'm.remind': 'напомним в',
+      'm.trial': 'Конец пробного',
+      'm.then': ', затем',
+      'm.cap2': '«Скоро». Пробный период появляется в тот день, когда начнут списывать деньги.',
+      'get.title': 'Что вы получаете',
+      'get.p': 'Те, кто вносит всё, обычно находят одну-две забытые подписки. Для обычного списка это примерно',
+      'get.fig': '150–300 €<small> в год</small>',
+      'get.figAria': 'от 150 до 300 евро в год',
+      'get.d1t': 'Напоминание перед каждым списанием',
+      'get.d1d': 'Локальные уведомления, время выбираете вы. Работают даже в режиме полёта.',
+      'get.d2t': 'Один честный итог за месяц',
+      'get.d2d': 'Годовые и еженедельные тарифы пересчитываются в месячную сумму. Разные валюты считаются отдельно, пока вы не укажете курс.',
+      'get.d3t': 'Пробные периоды не проскочат',
+      'get.d3d': 'Отметьте подписку как пробную, и Tally напомнит за день до первого списания.',
+      'get.d4t': 'Ваши данные — в вашем файле',
+      'get.d4d': 'Экспорт в CSV в любой момент. Резервная копия — через обычный бэкап телефона или вовсе без неё.',
+      'get.d5t': 'Без подключения к банку',
+      'get.d5d': 'Tally никогда не спрашивает логин от банка. Подписки вы вносите сами — поэтому ничему и не нужно покидать телефон.',
+      'cta.title': 'Запишите список один раз. И больше без сюрпризов.',
+      'cta.p': 'Бесплатно до десяти подписок. Чтобы снять ограничение — 4,99 € один раз, а не каждый месяц.',
+      'cta.ios': 'Скачать для iPhone',
+      'cta.android': 'Скачать для Android',
+      'cta.meta': 'iOS 16 и новее · Android 10 и новее',
+      'foot.made': 'Tally — сделали два человека в Лиссабоне.',
+      'foot.policy': 'Политика конфиденциальности',
+      'foot.short': '(она короткая)'
+    },
+    uk: {
+      'meta.title': 'Tally — підписки, що зберігаються на вашому телефоні',
+      'meta.desc': 'Tally показує всі ваші підписки й заздалегідь нагадує про кожне списання. Працює лише на вашому пристрої.',
+      'skip': 'Перейти до змісту',
+      'nav.label': 'Основне меню',
+      'nav.how': 'Як це працює',
+      'nav.download': 'Завантажити',
+      'lang.label': 'Мова',
+      'hero.title': 'Підписки поновлюються непомітно. Tally попередить <em>за три дні</em> до списання.',
+      'hero.lead': 'Простий список усього, за що ви платите щомісяця чи щороку, з датою наступного списання біля кожного рядка. Для всіх, хто хоч раз знаходив у виписці 9,99 € і не міг згадати, на що підписався.',
+      'hero.privacy': 'Tally зберігає ваш список лише на телефоні: немає акаунта, немає сервера, жодних листів чи повідомлень у Telegram від вашого імені — нагадування надходять звичайними сповіщеннями самого застосунку.',
+      'how.title': 'Як це працює',
+      'how.s1.t': 'Додайте, за що платите',
+      'how.s1.p': 'Введіть назву, ціну й день поновлення. У більшості людей підписок від шести до п’ятнадцяти. Щоб внести всі, потрібно хвилин п’ять.',
+      'how.s2.t': 'Tally рахує дати',
+      'how.s2.p': 'Щомісяця, щороку, кожні чотири тижні, пробний період до 14-го — Tally розраховує кожне майбутнє списання й веде підсумок за місяць у вашій валюті.',
+      'how.s3.t': 'Сповіщення перед кожним списанням',
+      'how.s3.p': 'За замовчуванням за три дні або тоді, коли скажете. Цього досить, щоб скасувати те, чим ви більше не користуєтеся.',
+      'screens.title': 'Здебільшого два екрани',
+      'screens.p': 'Список показує, що й коли ви платите. Екран «Незабаром» — найближчі тридцять днів по черзі, тож наступний місяць не застане зненацька.',
+      'm.aria1': 'Список підписок у Tally: сім підписок на 69,96 € на місяць, за датою наступного списання.',
+      'm.aria2': 'Найближчі списання в Tally: 40,97 € за 14 днів, за датами, плюс один пробний період, що закінчується.',
+      'm.subs': 'Підписки',
+      'm.subsMeta': '7 активних · за датою списання',
+      'm.monthly': 'Щомісяця',
+      'm.yearly': 'Щороку',
+      'm.permo': '/міс',
+      'm.in2': 'через 2 дні',
+      'm.in3': 'через 3 дні',
+      'm.perMonth': 'На місяць',
+      'm.cap1': 'Список. Річні тарифи показано місячною часткою, тому підсумок чесний.',
+      'm.upcoming': 'Незабаром',
+      'm.next14': 'Найближчі 14 днів',
+      'm.d7': '7 днів', 'm.d14': '14 днів', 'm.d30': '30 днів',
+      'm.reminded': 'нагадали',
+      'm.remind': 'нагадаємо в',
+      'm.trial': 'Кінець пробного',
+      'm.then': ', потім',
+      'm.cap2': '«Незабаром». Пробний період з’являється того дня, коли почнуть списувати гроші.',
+      'get.title': 'Що ви отримуєте',
+      'get.p': 'Ті, хто вносить усе, зазвичай знаходять одну-дві забуті підписки. Для звичайного списку це приблизно',
+      'get.fig': '150–300 €<small> на рік</small>',
+      'get.figAria': 'від 150 до 300 євро на рік',
+      'get.d1t': 'Нагадування перед кожним списанням',
+      'get.d1d': 'Локальні сповіщення, час обираєте ви. Працюють навіть у режимі польоту.',
+      'get.d2t': 'Один чесний підсумок за місяць',
+      'get.d2d': 'Річні й щотижневі тарифи перераховуються в місячну суму. Різні валюти рахуються окремо, доки ви не вкажете курс.',
+      'get.d3t': 'Пробні періоди не проскочать',
+      'get.d3d': 'Позначте підписку як пробну, і Tally нагадає за день до першого списання.',
+      'get.d4t': 'Ваші дані — у вашому файлі',
+      'get.d4d': 'Експорт у CSV будь-коли. Резервна копія — через звичайний бекап телефона або взагалі без неї.',
+      'get.d5t': 'Без підключення до банку',
+      'get.d5d': 'Tally ніколи не питає логін від банку. Підписки ви вносите самі — тому нічому й не треба залишати телефон.',
+      'cta.title': 'Запишіть список один раз. І більше без сюрпризів.',
+      'cta.p': 'Безкоштовно до десяти підписок. Щоб зняти обмеження — 4,99 € один раз, а не щомісяця.',
+      'cta.ios': 'Завантажити для iPhone',
+      'cta.android': 'Завантажити для Android',
+      'cta.meta': 'iOS 16 і новіше · Android 10 і новіше',
+      'foot.made': 'Tally — зробили двоє людей у Лісабоні.',
+      'foot.policy': 'Політика конфіденційності',
+      'foot.short': '(вона коротка)'
+    }
+  };
+  var LOCALE = { en: 'en-GB', ru: 'ru-RU', uk: 'uk-UA' };
+
+  var root = document.documentElement;
+  var descMeta = document.querySelector('meta[name="description"]');
+  var textEls = document.querySelectorAll('[data-i18n]');
+  var ariaEls = document.querySelectorAll('[data-i18n-aria]');
+
+  // Capture English from the markup so it is written only once.
+  var en = { 'meta.title': document.title, 'meta.desc': descMeta.content };
+  textEls.forEach(function (el) { en[el.dataset.i18n] = el.innerHTML; });
+  ariaEls.forEach(function (el) { en[el.dataset.i18nAria] = el.getAttribute('aria-label'); });
+  STRINGS.en = en;
+
+  function utc(iso) { var p = iso.split('-'); return new Date(Date.UTC(+p[0], p[1] - 1, +p[2])); }
+  function fmt(locale, opts) {
+    try { return new Intl.DateTimeFormat(locale, Object.assign({ timeZone: 'UTC' }, opts)); }
+    catch (e) { return null; }
+  }
+
+  function apply(lang) {
+    if (!STRINGS[lang]) lang = 'en';
+    var t = STRINGS[lang], loc = LOCALE[lang];
+    root.lang = lang;
+    document.title = t['meta.title'];
+    descMeta.content = t['meta.desc'];
+    textEls.forEach(function (el) { var v = t[el.dataset.i18n]; if (v != null) el.innerHTML = v; });
+    ariaEls.forEach(function (el) { var v = t[el.dataset.i18nAria]; if (v != null) el.setAttribute('aria-label', v); });
+
+    var money;
+    try { money = new Intl.NumberFormat(loc, { style: 'currency', currency: 'EUR', currencyDisplay: 'narrowSymbol' }); }
+    catch (e) { money = new Intl.NumberFormat(loc, { style: 'currency', currency: 'EUR' }); }
+    document.querySelectorAll('[data-price]').forEach(function (el) { el.textContent = money.format(+el.dataset.price); });
+
+    var dShort = fmt(loc, { day: 'numeric', month: 'short' });
+    var dDay = fmt(loc, { weekday: 'short', day: 'numeric', month: 'short' });
+    var dWk = fmt(loc, { weekday: 'short' });
+    if (dShort) document.querySelectorAll('[data-date]').forEach(function (el) { el.textContent = dShort.format(utc(el.dataset.date)); });
+    if (dDay) document.querySelectorAll('[data-day]').forEach(function (el) {
+      var s = dDay.format(utc(el.dataset.day)).replace(',', '');
+      el.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+    });
+    if (dWk) document.querySelectorAll('[data-weekday]').forEach(function (el) { el.textContent = dWk.format(utc(el.dataset.weekday)); });
+
+    document.querySelectorAll('[data-lang]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+    });
+  }
+
+  function saved() { try { return localStorage.getItem('tally-lang'); } catch (e) { return null; } }
+  function save(l) { try { localStorage.setItem('tally-lang', l); } catch (e) {} }
+
+  var param = new URLSearchParams(location.search).get('lang');
+  var nav = (navigator.language || '').slice(0, 2).toLowerCase();
+  var initial = param || saved() || (nav === 'ru' || nav === 'uk' ? nav : 'en');
+  if (initial !== 'en') apply(initial);
+
+  document.querySelectorAll('[data-lang]').forEach(function (b) {
+    b.addEventListener('click', function () { apply(b.dataset.lang); save(b.dataset.lang); });
+  });
+
+  // One quiet fade, skipped when reduced motion is requested.
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;
+  root.classList.add('js');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>

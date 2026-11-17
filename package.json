@@ -1,0 +1,7 @@
+{
+  "name": "tally-site",
+  "private": true,
+  "scripts": {
+    "build": "npm ci --prefix react-app && npm run build --prefix react-app"
+  }
+}
